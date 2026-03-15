@@ -9,6 +9,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.models.cvae_expert import CVAEExpert, negative_elbo
+from src.torch_utils import safe_torch_load
 from src.train.checkpoint_utils import load_resume_state, save_resume_state, training_state_path
 
 try:
@@ -74,7 +75,7 @@ def run_training(
         bad_epochs = int(state.get("bad_epochs", bad_epochs))
     elif ckpt.exists():
         # Backward compatibility: plain model checkpoint without optimizer state.
-        model.load_state_dict(torch.load(ckpt, map_location=device))
+        model.load_state_dict(safe_torch_load(ckpt, map_location=device))
 
     epoch_iter = range(start_epoch, epochs)
     epoch_bar = tqdm(epoch_iter, desc=f"train:{model_name}", unit="epoch") if tqdm is not None else None

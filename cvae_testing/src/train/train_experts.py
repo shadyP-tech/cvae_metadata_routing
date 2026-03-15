@@ -6,6 +6,7 @@ from typing import Dict
 
 import torch
 
+from src.torch_utils import safe_torch_load
 from src.train.train_utils import run_training
 
 
@@ -32,8 +33,8 @@ def train_domain_experts(
     resume_from_dir: Path | None = None,
 ) -> Dict[str, str]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    train_payload = torch.load(train_cache, map_location="cpu")
-    val_payload = torch.load(val_cache, map_location="cpu")
+    train_payload = safe_torch_load(train_cache, map_location="cpu")
+    val_payload = safe_torch_load(val_cache, map_location="cpu")
     input_dim = int(train_payload["embeddings"].shape[1])
 
     output: Dict[str, str] = {}

@@ -11,6 +11,7 @@ from src.eval.metrics import spearman_corr
 from src.models.cvae_expert import CVAEExpert, elbo_components
 from src.models.projection_head import ProjectionHead
 from src.routing.strategies import compute_similarity
+from src.torch_utils import safe_torch_load
 
 
 @dataclass
@@ -22,7 +23,7 @@ class RoutingStats:
 
 class HybridExpertBank:
     def __init__(self, checkpoint: Path, device: torch.device) -> None:
-        payload = torch.load(checkpoint, map_location=device)
+        payload = safe_torch_load(checkpoint, map_location=device)
         self.variant = str(payload["variant"])
         self.domains = [int(d) for d in payload["domains"]]
         self.input_dim = int(payload["input_dim"])
@@ -175,7 +176,7 @@ def compute_hybrid_matrices_and_routing(
     seed: int,
     similarity_matrix: Optional[Dict[str, Dict[str, float]]] = None,
 ) -> Dict[str, object]:
-    payload = torch.load(test_cache, map_location="cpu")
+    payload = safe_torch_load(test_cache, map_location="cpu")
     x_cpu = payload["embeddings"]
     by_domain = _payload_by_domain(payload)
     domains = sorted(by_domain.keys())
@@ -396,8 +397,8 @@ def evaluate_downstream_utility(
     budget_multipliers: List[float],
 ) -> Dict[str, object]:
     _ = temperature
-    train_payload = torch.load(train_cache, map_location="cpu")
-    test_payload = torch.load(test_cache, map_location="cpu")
+    train_payload = safe_torch_load(train_cache, map_location="cpu")
+    test_payload = safe_torch_load(test_cache, map_location="cpu")
     train_by_domain = _payload_by_domain(train_payload)
     test_by_domain = _payload_by_domain(test_payload)
 
@@ -513,7 +514,7 @@ def evaluate_global_baselines(
     legacy_latent_dim: int,
     pooled_checkpoint: Path,
 ) -> Dict[str, float]:
-    payload = torch.load(test_cache, map_location="cpu")
+    payload = safe_torch_load(test_cache, map_location="cpu")
     x_cpu = payload["embeddings"]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -525,7 +526,7 @@ def evaluate_global_baselines(
         hidden_dim=int(legacy_hidden_dim),
         latent_dim=int(legacy_latent_dim),
     ).to(device)
-    legacy.load_state_dict(torch.load(legacy_global_checkpoint, map_location=device))
+    legacy.load_state_dict(safe_torch_load(legacy_global_checkpoint, map_location=device))
     legacy.eval()
 
     with torch.no_grad():

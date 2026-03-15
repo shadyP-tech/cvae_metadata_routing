@@ -4,6 +4,7 @@ from pathlib import Path
 
 import torch
 
+from src.torch_utils import safe_torch_load
 from src.train.train_utils import run_training
 
 
@@ -20,8 +21,8 @@ def train_global_model(
     resume_from: Path | None = None,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    train_payload = torch.load(train_cache, map_location="cpu")
-    val_payload = torch.load(val_cache, map_location="cpu")
+    train_payload = safe_torch_load(train_cache, map_location="cpu")
+    val_payload = safe_torch_load(val_cache, map_location="cpu")
 
     input_dim = int(train_payload["embeddings"].shape[1])
     result = run_training(

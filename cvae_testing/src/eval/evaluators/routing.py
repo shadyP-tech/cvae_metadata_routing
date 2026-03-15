@@ -8,6 +8,7 @@ import torch
 
 from src.eval.metrics import selection_accuracy
 from src.models.cvae_expert import CVAEExpert, elbo_components
+from src.torch_utils import safe_torch_load
 from src.routing.router import (
     confusion_update,
     equal_weight_scoring_weights,
@@ -18,7 +19,7 @@ from src.routing.router import (
 
 def _load_model(checkpoint: Path, input_dim: int, hidden_dim: int, latent_dim: int, device: torch.device):
     model = CVAEExpert(input_dim=input_dim, hidden_dim=hidden_dim, latent_dim=latent_dim).to(device)
-    model.load_state_dict(torch.load(checkpoint, map_location=device))
+    model.load_state_dict(safe_torch_load(checkpoint, map_location=device))
     model.eval()
     return model
 
@@ -48,7 +49,7 @@ def evaluate_routing(
     similarity_matrix: Optional[Dict[str, Dict[str, float]]] = None,
 ) -> Dict[str, object]:
     rng = random.Random(seed)
-    payload = torch.load(test_cache, map_location="cpu")
+    payload = safe_torch_load(test_cache, map_location="cpu")
     x_cpu = payload["embeddings"]
     meta = payload["metadata"]
 

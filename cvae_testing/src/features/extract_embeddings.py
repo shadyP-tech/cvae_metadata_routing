@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
 
 from src.data.datasets.breakhis import BreakHisRecord
+from src.torch_utils import safe_torch_load
 
 
 class RecordImageDataset(Dataset):
@@ -70,7 +71,7 @@ def extract_and_cache_embeddings(
             for split in ["train", "val", "test"]
         }
         for split, p in paths.items():
-            payload = torch.load(p, map_location="cpu")
+            payload = safe_torch_load(p, map_location="cpu")
             if int(payload["embeddings"].shape[0]) <= 0:
                 reusable = False
                 break
@@ -114,7 +115,7 @@ def extract_and_cache_embeddings(
 def validate_embedding_cache(cache_paths: Dict[str, Path], expected_dim: int = 512) -> Dict[str, object]:
     report: Dict[str, object] = {}
     for split, path in cache_paths.items():
-        payload = torch.load(path, map_location="cpu")
+        payload = safe_torch_load(path, map_location="cpu")
         embeddings = payload["embeddings"]
         metadata = payload["metadata"]
 

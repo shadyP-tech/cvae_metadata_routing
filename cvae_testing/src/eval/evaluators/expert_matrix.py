@@ -7,11 +7,12 @@ import torch
 
 from src.eval.metrics import mean_and_variance
 from src.models.cvae_expert import CVAEExpert, elbo_components
+from src.torch_utils import safe_torch_load
 
 
 def _load_model(checkpoint: Path, input_dim: int, hidden_dim: int, latent_dim: int, device: torch.device):
     model = CVAEExpert(input_dim=input_dim, hidden_dim=hidden_dim, latent_dim=latent_dim).to(device)
-    model.load_state_dict(torch.load(checkpoint, map_location=device))
+    model.load_state_dict(safe_torch_load(checkpoint, map_location=device))
     model.eval()
     return model
 
@@ -22,7 +23,7 @@ def compute_expert_domain_matrix(
     hidden_dim: int,
     latent_dim: int,
 ) -> Dict[str, object]:
-    payload = torch.load(test_cache, map_location="cpu")
+    payload = safe_torch_load(test_cache, map_location="cpu")
     x = payload["embeddings"]
     meta = payload["metadata"]
     input_dim = int(x.shape[1])

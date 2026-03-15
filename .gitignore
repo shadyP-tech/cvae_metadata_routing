@@ -1,8 +1,35 @@
-pycache/
-*.pyc
-*.pyo
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments and local env files
 .env
-.venv
-outputs/
-wandb/
-data/
+.env.*
+.venv/
+venv/
+env/
+
+# Packaging/build artifacts
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# OS/editor noise
+.DS_Store
+.vscode/settings.json
+
+# Project-generated outputs and tracking files
+cvae_testing/outputs/
+cvae_testing/wandb/
+
+# Local datasets (do not commit raw data)
+cvae_testing/data/

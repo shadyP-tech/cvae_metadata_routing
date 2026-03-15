@@ -1,0 +1,8 @@
+pycache/
+*.pyc
+*.pyo
+.env
+.venv
+outputs/
+wandb/
+data/

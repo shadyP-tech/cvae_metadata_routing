@@ -1,0 +1,69 @@
+seed: 42
+
+experiment:
+  dataset_name: breakhis
+  name: latent_compatibility_v1
+  mode: latent_compatibility
+
+data:
+  dataset_type: breakhis
+  root: data/BreakHis
+  image_extensions: [".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp"]
+  magnifications: [40, 100, 200, 400]
+  max_samples_per_domain: 500
+  split:
+    train: 0.70
+    val: 0.15
+    test: 0.15
+  require_patient_ids: false
+
+features:
+  image_size: 64
+  embedding_dim: 512
+
+model:
+  hidden_dim: 256
+  latent_dim: 16
+
+training:
+  batch_size: 128
+  learning_rate: 0.001
+  epochs: 25
+  patience: 5
+
+routing:
+  strategy: categorical_exact
+  tau: 1.0
+  temperature: 1.0
+
+latent_compatibility:
+  metrics: [centroid, wasserstein, gaussian_kl]
+  similarity_transform: exp_neg
+  splits: [test]
+  min_samples_per_domain: 50
+  covariance_regularization_lambda: 1.0e-4
+  covariance_fallback: diagonal_if_small_n
+  scale_policy: median_off_diagonal
+  evaluation_metrics: [top1_agreement, mean_rank, spearman_with_utility]
+  composite_metric: wasserstein
+
+  verification:
+    symmetry_atol: 1.0e-6
+    symmetry_rtol: 1.0e-5
+    diag_opt_tol: 1.0e-6
+
+  wasserstein:
+    eigenvalue_floor: 1.0e-10
+
+  similarity:
+    scale_floor: 1.0e-8
+    scale_policy: median_off_diagonal
+
+  umap:
+    max_points: 5000
+
+  empirical_utility:
+    enabled: true
+
+output:
+  root: outputs

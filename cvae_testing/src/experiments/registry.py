@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from src.experiments.base import BaseExperiment
 from src.experiments.hybrid import HybridAblationExperiment
+from src.experiments.latent_compatibility import LatentCompatibilityExperiment
 from src.experiments.legacy_routed import LegacyRoutedExperiment
 
 
 EXPERIMENT_REGISTRY = {
     "legacy_routed_cvae": LegacyRoutedExperiment,
     "hybrid_ablation": HybridAblationExperiment,
+    "latent_compatibility": LatentCompatibilityExperiment,
 }
 
 

@@ -33,3 +33,10 @@ def write_run_summary(reports_dir: Path, mode: str, payload: Dict[str, Any]) -> 
             f.write(f"- legacy_global_nelbo: {float(baselines.get('legacy_global_nelbo', 0.0)):.4f}\n")
             f.write(f"- hybrid_pooled_global_nelbo: {float(baselines.get('hybrid_pooled_global_nelbo', 0.0)):.4f}\n")
             f.write(f"- n_variants: {len(variants)}\n")
+
+        elif mode == "latent_compatibility":
+            f.write("\n## Latent Compatibility Artifacts\n\n")
+            f.write(f"- routing_artifact: {payload.get('routing_artifact', '')}\n")
+            f.write(f"- gaussian_stats_artifact: {payload.get('gaussian_stats_artifact', '')}\n")
+            f.write(f"- correlation_artifact: {payload.get('correlation_artifact', '')}\n")
+            f.write(f"- report_artifact: {payload.get('report_artifact', '')}\n")

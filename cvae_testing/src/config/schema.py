@@ -34,6 +34,29 @@ def validate_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     if int(cfg["training"]["epochs"]) <= 0:
         raise ValueError("training.epochs must be > 0")
 
+    features_cfg = cfg.get("features", {})
+    if not isinstance(features_cfg, dict):
+        raise ValueError("features must be a dictionary")
+
+    image_size = int(features_cfg.get("image_size", 0))
+    if image_size <= 0:
+        raise ValueError("features.image_size must be > 0")
+
+    embedding_dim = features_cfg.get("embedding_dim")
+    if embedding_dim is not None and int(embedding_dim) <= 0:
+        raise ValueError("features.embedding_dim must be > 0 when provided")
+
+    extraction_batch_size = features_cfg.get("extraction_batch_size")
+    if extraction_batch_size is not None and int(extraction_batch_size) <= 0:
+        raise ValueError("features.extraction_batch_size must be > 0 when provided")
+
+    backbone_type = str(features_cfg.get("backbone_type", "resnet18")).strip().lower()
+    allowed_backbones = {"resnet18", "resnet50", "dinov2_vitb14"}
+    if backbone_type not in allowed_backbones:
+        raise ValueError(
+            f"features.backbone_type must be one of {sorted(allowed_backbones)}, got: {backbone_type}"
+        )
+
     magnifications = cfg.get("data", {}).get("magnifications", [])
     if not isinstance(magnifications, list) or not magnifications:
         raise ValueError("data.magnifications must be a non-empty list")

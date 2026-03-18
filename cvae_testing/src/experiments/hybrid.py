@@ -87,6 +87,10 @@ class HybridAblationExperiment(BaseExperiment):
 
         hybrid_results: Dict[str, object] = {
             "mode": "hybrid_ablation",
+            "dataset_name": str(cfg.get("experiment", {}).get("dataset_name", "unknown")),
+            "seed": int(cfg["seed"]),
+            "backbone_type": str(cfg.get("features", {}).get("backbone_type", "resnet18")),
+            "embedding_dim": int(cfg.get("features", {}).get("embedding_dim", 0)),
             "variants": {},
             "legacy_global_checkpoint": str(global_ckpt),
             "hybrid_pooled_checkpoint": str(pooled_info["checkpoint"]),
@@ -174,6 +178,10 @@ class HybridAblationExperiment(BaseExperiment):
             reports_dir=run_ctx.reports_dir,
             mode="hybrid_ablation",
             payload={
+                "dataset_name": hybrid_results.get("dataset_name", ""),
+                "seed": hybrid_results.get("seed", 0),
+                "backbone_type": hybrid_results.get("backbone_type", ""),
+                "embedding_dim": hybrid_results.get("embedding_dim", 0),
                 "global_baselines": hybrid_results.get("global_baselines", {}),
                 "variants": hybrid_results.get("variants", {}),
                 "summary_artifact": "hybrid_summary.json",

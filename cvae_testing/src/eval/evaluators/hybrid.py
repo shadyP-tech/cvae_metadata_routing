@@ -5,6 +5,7 @@ from pathlib import Path
 import random
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
 
 from src.eval.metrics import spearman_corr
@@ -167,6 +168,88 @@ def _score_domains_batched(
     return torch.stack(all_scores, dim=0), torch.stack(all_recon, dim=0)
 
 
+def _compatibility_sharpness(
+    compatibility_nelbo: Dict[str, Dict[str, float]],
+    expert_domains: List[int],
+    target_domains: List[int],
+) -> Dict[str, float]:
+    if not expert_domains or not target_domains:
+        return {
+            "diagonal_mean": 0.0,
+            "offdiagonal_mean": 0.0,
+            "offdiagonal_std": 0.0,
+            "diagonal_offdiagonal_gap": 0.0,
+            "diagonal_gap_ratio": 0.0,
+            "diagonal_margin_to_best_offdiagonal": 0.0,
+        }
+
+    mat = np.full((len(expert_domains), len(target_domains)), np.nan, dtype=np.float64)
+    for i, ed in enumerate(expert_domains):
+        row = compatibility_nelbo.get(f"{ed}x", {})
+        for j, td in enumerate(target_domains):
+            v = row.get(f"{td}x")
+            if v is not None:
+                mat[i, j] = float(v)
+
+    if not np.isfinite(mat).any():
+        return {
+            "diagonal_mean": 0.0,
+            "offdiagonal_mean": 0.0,
+            "offdiagonal_std": 0.0,
+            "diagonal_offdiagonal_gap": 0.0,
+            "diagonal_gap_ratio": 0.0,
+            "diagonal_margin_to_best_offdiagonal": 0.0,
+        }
+
+    diag_vals: List[float] = []
+    offdiag_vals: List[float] = []
+    diag_margins: List[float] = []
+    domain_to_expert_idx = {int(d): i for i, d in enumerate(expert_domains)}
+
+    for j, td in enumerate(target_domains):
+        col = mat[:, j]
+        finite_idxs = [idx for idx, v in enumerate(col.tolist()) if np.isfinite(v)]
+        if not finite_idxs:
+            continue
+
+        best_offdiag = min(
+            [float(col[idx]) for idx in finite_idxs],
+            default=float("inf"),
+        )
+        if int(td) in domain_to_expert_idx:
+            diag_idx = domain_to_expert_idx[int(td)]
+            diag_v = float(col[diag_idx])
+            if np.isfinite(diag_v):
+                diag_vals.append(diag_v)
+                offdiag_only = [float(col[idx]) for idx in finite_idxs if idx != diag_idx]
+                if offdiag_only:
+                    offdiag_vals.extend(offdiag_only)
+                    diag_margins.append(diag_v - min(offdiag_only))
+                else:
+                    diag_margins.append(diag_v - best_offdiag)
+        else:
+            offdiag_vals.extend([float(col[idx]) for idx in finite_idxs])
+
+    if not diag_vals:
+        diag_vals = [float(v) for v in mat[np.isfinite(mat)].tolist()]
+
+    diag_mean = float(np.mean(diag_vals)) if diag_vals else 0.0
+    offdiag_mean = float(np.mean(offdiag_vals)) if offdiag_vals else diag_mean
+    offdiag_std = float(np.std(offdiag_vals)) if offdiag_vals else 0.0
+    gap = offdiag_mean - diag_mean
+    gap_ratio = gap / (abs(offdiag_mean) + 1e-8)
+    margin_mean = float(np.mean(diag_margins)) if diag_margins else 0.0
+
+    return {
+        "diagonal_mean": diag_mean,
+        "offdiagonal_mean": offdiag_mean,
+        "offdiagonal_std": offdiag_std,
+        "diagonal_offdiagonal_gap": gap,
+        "diagonal_gap_ratio": gap_ratio,
+        "diagonal_margin_to_best_offdiagonal": margin_mean,
+    }
+
+
 def compute_hybrid_matrices_and_routing(
     test_cache: Path,
     hybrid_checkpoint: Path,
@@ -290,12 +373,22 @@ def compute_hybrid_matrices_and_routing(
             "mean_rank_of_metadata_selected_expert": float(
                 sum(s.mean_rank_of_metadata_selected_expert for s in domain_stats) / len(domain_stats)
             ),
+            "compatibility_sharpness_nelbo": _compatibility_sharpness(
+                compatibility_nelbo=compatibility_nelbo,
+                expert_domains=expert_domains,
+                target_domains=domains,
+            ),
         }
     else:
         stats = {
             "spearman_similarity_vs_neg_nelbo": 0.0,
             "top1_agreement_with_best_expert": 0.0,
             "mean_rank_of_metadata_selected_expert": 0.0,
+            "compatibility_sharpness_nelbo": _compatibility_sharpness(
+                compatibility_nelbo=compatibility_nelbo,
+                expert_domains=expert_domains,
+                target_domains=domains,
+            ),
         }
 
     return {
